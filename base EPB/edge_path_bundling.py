@@ -22,7 +22,7 @@ def dijkstra(G, source, target, weights, skip):
 
     return None
 
-def edge_path_bundling(G, edges, DG_lengths, k, d):
+def edge_path(G, edges, DG_lengths, k, d):
     # initialise dicts
     lock = {e: False for e in edges}
     skip = {e: False for e in edges}
@@ -57,5 +57,3 @@ def edge_path_bundling(G, edges, DG_lengths, k, d):
         control_points[e] = p
 
     return control_points
-
-
