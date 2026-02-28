@@ -1,19 +1,22 @@
 import matplotlib.pyplot as plt
-from scipy.interpolate import make_interp_spline
+from scipy.interpolate import make_interp_spline, splprep
 import numpy as np
 from sympy.abc import alpha
 
 from edge_path_bundling import *
 
 pos = {
-    "U": (0, 1),
-    "V": (2, 2),
-    "X": (4, 2),
-    "W": (3, 0),
+    "A": (0, 0),
+    "B": (1, 3),
+    "C": (3, 6),
+    "D": (5, 8),
+    "E": (7, 10),
+    "F": (9, 11),
+    "G": (12, 12),
 }
 
 edges = [
-    ("U", "V"), ("U", "W"), ("V", "X"), ("V", "W"), ("X", "W")
+    ("A", "B"), ("B", "C"), ("C", "D"), ("D", "E"), ("E", "F"), ("F", "G"), ("A", "G"), ("C", "F")
 ]
 
 G = {n: [] for n in pos}
