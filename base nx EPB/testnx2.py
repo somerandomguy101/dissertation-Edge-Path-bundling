@@ -30,7 +30,7 @@ for u,v in edges:
 bundles = edge_path_bundling(G, 2, 1)
 
 # draw original graph
-nx.draw(G,pos,with_labels=True,edge_color="lightgray", node_color="black", font_color="white")
+nx.draw(G,pos,with_labels=True,edge_color="lightgray", node_color="black", font_color="white", edge_width=0.5)
 
 # draw bundled edges
 for e,path in bundles.items():
@@ -48,10 +48,10 @@ for e,path in bundles.items():
         xs_smooth = spl_x(t_smooth)
         ys_smooth = spl_y(t_smooth)
 
-        plt.plot(xs_smooth, ys_smooth, color="black")
+        plt.plot(xs_smooth, ys_smooth, color="black", linewidth=0.5, alpha=0.25)
 
     else:
-        plt.plot(xs,ys, color="black")
+        plt.plot(xs,ys, color="black", linewidth=0.5, alpha=0.25)
 
 plt.title("Bundled Graph")
 plt.axis("equal")
