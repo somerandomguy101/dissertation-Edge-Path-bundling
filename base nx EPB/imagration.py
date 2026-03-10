@@ -14,4 +14,4 @@ with open("migrations.nodes", "r") as f:
         G.add_node(n, pos=(float(x), float(y)))
 
 
-draw_bundle(G, 2, 2)
+draw_bundle(G, 2, 2, highlight_node="245")
