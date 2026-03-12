@@ -1,4 +1,8 @@
 import networkx as nx
+
+import matplotlib
+matplotlib.use('TkAgg')
+
 import matplotlib.pyplot as plt
 import math
 from matplotlib.patches import Circle
@@ -95,70 +99,83 @@ def relax_path_in_lens(xs, ys, center, radius, strength=0.7):
     return new_xs, new_ys
 
 
-
-def draw_bundle(G, k = 2, d = 2,  draw_orig = True, highlight_node = None, highlight_radius = 10, lens_center = None, lens_radius = 25, snap_strength = 0.7):
-    # extract positions
+def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radius=10, initial_lens_center=None, lens_radius=25, snap_strength=0.7):
+    # 1. Extract positions and compute edge lengths
     pos = nx.get_node_attributes(G, "pos")
-
-    # --------COMPUTE EDGE LENGTHS--------
     for u, v in G.edges:
         x1, y1 = pos[u]
         x2, y2 = pos[v]
-        length = math.hypot(x1 - x2, y1 - y2)
-        G.edges[u, v]["length"] = length
+        G.edges[u, v]["length"] = math.hypot(x1 - x2, y1 - y2)
 
-    # ---------- RUN BUNDLING ----------
+    # 2. Run bundling ONCE (computationally heavy)
+    print("Computing edge bundles...")
     bundle = edge_path_bundling(G, k, d)
 
-    # ---------- DRAW ORIGINAL GRAPH ----------
-    plt.figure(figsize=(12, 8))
+    # 3. Set up the Matplotlib figure and state
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    if draw_orig:
-        nx.draw(
-            G,
-            pos,
-            with_labels=False,
-            edge_color="lightgray",
-            node_color="black",
-            font_color="white",
-            node_size=1,
-        )
+    # We use a dictionary to store state so it can be modified by the nested functions
+    state = {'lens_center': initial_lens_center}
 
-    #--------CREATE LENS--------
-    if lens_center is not None:
-        ax = plt.gca()
-        lens = Circle((lens_center[0], lens_center[1]), lens_radius, fill=False, edgecolor="black", linewidth=2)
-        ax.add_patch(lens)
+    def update_plot():
+        """Clears and redraws the graph with the current lens position."""
+        ax.clear()
 
-    # -------- DRAW BUNDLED GRAPH--------
-    for e, path in bundle.items():
-        highlight = False
+        # Draw original graph
+        if draw_orig:
+            nx.draw(
+                G, pos, ax=ax, with_labels=False, edge_color="lightgray",
+                node_color="black", node_size=1
+            )
 
-        xs = [pos[n][0] for n in path]
-        ys = [pos[n][1] for n in path]
+        # Draw the lens circle
+        center = state['lens_center']
+        if center is not None:
+            lens = Circle((center[0], center[1]), lens_radius, fill=False, edgecolor="black", linewidth=2, zorder=5)
+            ax.add_patch(lens)
 
-        if highlight_node is not None:
-            highlight = bundle_near_node(path, pos, highlight_node, highlight_radius)
+        # Draw bundled graph
+        for e, path in bundle.items():
+            highlight = False
+            xs = [pos[n][0] for n in path]
+            ys = [pos[n][1] for n in path]
 
-        colour = "blue" if highlight else "black"
+            if highlight_node is not None:
+                highlight = bundle_near_node(path, pos, highlight_node, highlight_radius)
 
-        # apply relaxed lens
-        if lens_center is not None:
-            xs, ys = relax_path_in_lens(xs, ys, lens_center, lens_radius, strength=snap_strength)
+            colour = "blue" if highlight else "black"
 
-        if len(xs) >= 3:
-            t = np.linspace(0, 1, len(xs))
-            t_smooth = np.linspace(0, 1, 100)
+            # Apply the relaxed lens distortion
+            if center is not None:
+                xs, ys = relax_path_in_lens(xs, ys, center, lens_radius, strength=snap_strength)
 
-            spl_x = make_interp_spline(t, xs, k=2)
-            spl_y = make_interp_spline(t, ys, k=2)
+            # Plot splines or straight lines
+            if len(xs) >= 3:
+                t = np.linspace(0, 1, len(xs))
+                t_smooth = np.linspace(0, 1, 100)
+                spl_x = make_interp_spline(t, xs, k=2)
+                spl_y = make_interp_spline(t, ys, k=2)
+                ax.plot(spl_x(t_smooth), spl_y(t_smooth), color=colour, linewidth=0.5, zorder=3)
+            else:
+                ax.plot(xs, ys, color=colour, linewidth=0.5, zorder=3)
 
-            plt.plot(spl_x(t_smooth), spl_y(t_smooth), color=colour, linewidth=0.5)
+        ax.set_title("Interactive Bundled Graph (Click to move lens)")
+        ax.axis("equal")
+        fig.canvas.draw_idle()  # Efficiently redraw the canvas
 
-        else:
-            plt.plot(xs, ys, color=colour, linewidth=0.5)
+    def on_click(event):
+        """Handles mouse click events on the canvas."""
+        # Ignore clicks outside the actual plotting axes (like on the toolbar)
+        if event.inaxes != ax:
+            return
 
-    plt.title("Bundled Graph")
-    plt.axis("equal")
+        # Update the lens center to the click coordinates and redraw
+        state['lens_center'] = (event.xdata, event.ydata)
+        update_plot()
+
+    # 4. Connect the click event to our handler function
+    fig.canvas.mpl_connect('button_press_event', on_click)
+
+    # 5. Trigger the first draw and show the plot
+    update_plot()
     plt.show()
-
