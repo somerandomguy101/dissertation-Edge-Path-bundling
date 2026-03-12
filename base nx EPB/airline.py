@@ -1,13 +1,13 @@
 import networkx as nx
 
-from drawv2 import draw_bundle
+from draw import draw_bundle
 
 
 #-------- LOAD GRAPH--------
-G = nx.read_edgelist("migrations.edges")
+G = nx.read_edgelist("airlines.edges")
 
 
-with open("migrations.nodes", "r") as f:
+with open("airlines.nodes", "r") as f:
     for line in f:
         if not line.strip():
             continue
@@ -15,4 +15,4 @@ with open("migrations.nodes", "r") as f:
         G.add_node(n, pos=(float(x), float(y)))
 
 
-draw_bundle(G, 2, 2, draw_orig=False, lens_center=(-970, 325))
+draw_bundle(G, 2, 2, highlight_node=None, draw_orig=False)

@@ -27,7 +27,7 @@ def point_distance(p, a, b):
 
 
 
-def bundle_near_node(path_nodes, pos, node, radius = 5):
+def bundle_near_node(path_nodes, pos, node, radius = 10):
     node_pos = pos[node]
 
     for i in range(len(path_nodes)-1):
@@ -41,7 +41,7 @@ def bundle_near_node(path_nodes, pos, node, radius = 5):
 
 
 
-def draw_bundle(G, k = 2, d = 2,  draw_orig = True, highlight_node = None):
+def draw_bundle(G, k = 2, d = 2,  draw_orig = True, highlight_node = None, highlight_radius = 10):
     # extract positions
     pos = nx.get_node_attributes(G, "pos")
 
@@ -79,7 +79,7 @@ def draw_bundle(G, k = 2, d = 2,  draw_orig = True, highlight_node = None):
         ys = [pos[n][1] for n in path]
 
         if highlight_node is not None:
-            highlight = bundle_near_node(path, pos, highlight_node)
+            highlight = bundle_near_node(path, pos, highlight_node, highlight_radius)
 
         colour = "blue" if highlight else "black"
 
