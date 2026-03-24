@@ -99,7 +99,7 @@ def relax_path_in_lens(xs, ys, center, radius, strength=0.7):
     return new_xs, new_ys
 
 
-def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radius=10, initial_lens_center=None, lens_radius=25, snap_strength=0.7):
+def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radius=10, initial_lens_center=None, lens_radius=25, snap_strength=0.7, bundle_strength=0.75):
     # 1. Extract positions and compute edge lengths
     pos = nx.get_node_attributes(G, "pos")
     for u, v in G.edges:
@@ -136,10 +136,18 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
 
         # Draw bundled graph
         for e, path in bundle.items():
-            highlight = False
-            xs = [pos[n][0] for n in path]
-            ys = [pos[n][1] for n in path]
+            bundled_xs = np.array([pos[n][0] for n in path])
+            bundled_ys = np.array([pos[n][1] for n in path])
+            num_pts = len(path)
 
+            t_vals = np.linspace(0, 1, num_pts)
+            straight_xs = (1 - t_vals) * bundled_xs[0] + t_vals * bundled_xs[-1]
+            straight_ys = (1 - t_vals) * bundled_ys[0] + t_vals * bundled_ys[-1]
+
+            xs = (1 - bundle_strength) * straight_xs + bundle_strength * bundled_xs
+            ys = (1 - bundle_strength) * straight_ys + bundle_strength * bundled_ys
+
+            highlight = False
             if highlight_node is not None:
                 highlight = bundle_near_node(path, pos, highlight_node, highlight_radius)
 
