@@ -1,7 +1,7 @@
 import networkx as nx
 
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('TkAgg') # done so that the window stays open allowing the user to click
 
 import matplotlib.pyplot as plt
 import math

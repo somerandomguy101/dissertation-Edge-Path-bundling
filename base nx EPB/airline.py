@@ -1,6 +1,6 @@
 import networkx as nx
 
-from draw import draw_bundle
+from drawv2 import draw_bundle
 
 
 #-------- LOAD GRAPH--------
