@@ -150,12 +150,20 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
                 xs, ys = relax_path_in_lens(xs, ys, center, lens_radius, strength=snap_strength)
 
             # Plot splines or straight lines
-            if len(xs) >= 3:
+            if len(xs) > 3:
+                t = np.linspace(0, 1, len(xs))
+                t_smooth = np.linspace(0, 1, 100)
+                spl_x = make_interp_spline(t, xs, k=3)
+                spl_y = make_interp_spline(t, ys, k=3)
+                ax.plot(spl_x(t_smooth), spl_y(t_smooth), color=colour, linewidth=0.5, zorder=3)
+
+            elif len(xs) == 3:
                 t = np.linspace(0, 1, len(xs))
                 t_smooth = np.linspace(0, 1, 100)
                 spl_x = make_interp_spline(t, xs, k=2)
                 spl_y = make_interp_spline(t, ys, k=2)
                 ax.plot(spl_x(t_smooth), spl_y(t_smooth), color=colour, linewidth=0.5, zorder=3)
+
             else:
                 ax.plot(xs, ys, color=colour, linewidth=0.5, zorder=3)
 
