@@ -64,37 +64,64 @@ def relax_path_in_lens(xs, ys, center, radius, strength=0.7):
     adjusts points sequentially to align towards orthagonal angles inside the lens.
     includes error correction to ensure path still hits its final target node
     """
-    new_xs, new_ys = [xs[0]], [ys[0]]
+    # Convert NumPy arrays to standard Python lists of floats to avoid scalar indexing errors
+    xs = [float(x) for x in xs]
+    ys = [float(y) for y in ys]
 
-    for i in range(1, len(xs)):
-        a = (new_xs[i-1], new_ys[i-1])
-        b = (xs[i], ys[i])
+    new_xs = list(xs)
+    new_ys = list(ys)
 
-        if segment_in_lens(a, b, center, radius):
-            angle = segment_angle(a, b)
-            target_angle = snap_perpendicular(angle)
+    i = 0
+    while i < len(xs) - 1:
+        # Check if the current segment is inside the lens
+        if segment_in_lens((xs[i], ys[i]), (xs[i + 1], ys[i + 1]), center, radius):
+            start_idx = i
 
-            #calculate shortest angular distance to path
-            diff = (target_angle - angle + math.pi) % (2 * math.pi) - math.pi
+            # Fast-forward to find the end of this continuous in-lens section
+            while i < len(xs) - 1 and segment_in_lens((xs[i], ys[i]), (xs[i + 1], ys[i + 1]), center, radius):
+                i += 1
+            end_idx = i
 
-            #relax blend towards the target angle based on 'strength'
-            relaxed_angle = angle + diff * strength
+            # Extract just the sub-path that is inside the lens
+            sub_xs = xs[start_idx:end_idx + 1]
+            sub_ys = ys[start_idx:end_idx + 1]
 
-            #reconstruct point 'b' by preserving the original segment length
-            length = math.hypot(b[0] - a[0], b[1] - a[1])
-            b = (a[0] + length * math.cos(relaxed_angle), a[1] + length * math.sin(relaxed_angle))
+            # Ensure these are strictly initialized as LISTS, not scalar variables
+            rel_xs = [sub_xs[0]]
+            rel_ys = [sub_ys[0]]
 
-        new_xs.append(b[0])
-        new_ys.append(b[1])
+            # Relax angles sequentially JUST for this sub-path
+            for j in range(1, len(sub_xs)):
+                pa = (rel_xs[j - 1], rel_ys[j - 1])
+                pb = (sub_xs[j], sub_ys[j])
 
-    #error correction - sequential angle will cause the end of the path to miss its target node, we linearly distribute that drift back over the path
-    if len(xs) > 1:
-        err_x = xs[-1] - new_xs[-1]
-        err_y = ys[-1] - new_ys[-1]
-        for i in range(len(xs)):
-            t = i / (len(new_xs) - 1)
-            new_xs[i] += err_x * t
-            new_ys[i] += err_y * t
+                angle = segment_angle(pa, pb)
+                target_angle = snap_perpendicular(angle)
+
+                # Calculate shortest angular distance
+                diff = (target_angle - angle + math.pi) % (2 * math.pi) - math.pi
+
+                # Relax towards the target angle
+                relaxed_angle = angle + diff * strength
+
+                # Reconstruct point 'b' preserving segment length
+                length = math.hypot(pb[0] - pa[0], pb[1] - pa[1])
+                new_bx = pa[0] + length * math.cos(relaxed_angle)
+                new_by = pa[1] + length * math.sin(relaxed_angle)
+
+                rel_xs.append(new_bx)
+                rel_ys.append(new_by)
+
+            # Local error correction: distribute the drift back over ONLY this specific sub-path
+            if len(sub_xs) > 1:
+                err_x = sub_xs[-1] - rel_xs[-1]
+                err_y = sub_ys[-1] - rel_ys[-1]
+                for j in range(len(rel_xs)):
+                    t = j / (len(rel_xs) - 1)
+                    new_xs[start_idx + j] = rel_xs[j] + err_x * t
+                    new_ys[start_idx + j] = rel_ys[j] + err_y * t
+        else:
+            i += 1
 
     return new_xs, new_ys
 
@@ -185,8 +212,13 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
         if event.inaxes != ax:
             return
 
-        # Update the lens center to the click coordinates and redraw
-        state['lens_center'] = (event.xdata, event.ydata)
+        if event.button == 3: # if it's a right click remove the lens
+            state['lens_center'] = None
+
+        else:
+            # Update the lens center to the click coordinates and redraw
+            state['lens_center'] = (event.xdata, event.ydata)
+
         update_plot()
 
     # 4. Connect the click event to our handler function
