@@ -142,7 +142,9 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # We use a dictionary to store state so it can be modified by the nested functions
-    state = {'lens_center': initial_lens_center}
+    state = {'lens_center': initial_lens_center,
+             'highlight_node': highlight_node
+             }
 
     def update_plot():
         """Clears and redraws the graph with the current lens position."""
@@ -175,8 +177,8 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
             ys = (1 - bundle_strength) * straight_ys + bundle_strength * bundled_ys
 
             highlight = False
-            if highlight_node is not None:
-                highlight = bundle_near_node(path, pos, highlight_node, highlight_radius)
+            if state['highlight_node'] is not None:
+                highlight = bundle_near_node(path, pos, state['highlight_node'], highlight_radius)
 
             colour = "blue" if highlight else "black"
 
@@ -202,6 +204,10 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
             else:
                 ax.plot(xs, ys, color=colour, linewidth=0.5, zorder=3)
 
+        if state['highlight_node'] is not None:
+            node_x, node_y = pos[state['highlight_node']]
+            ax.scatter(node_x, node_y, s=30, color="gray", zorder=20, edgecolors="white")
+
         ax.set_title("Interactive Bundled Graph (Click to move lens)")
         ax.axis("equal")
         fig.canvas.draw_idle()  # Efficiently redraw the canvas
@@ -221,8 +227,41 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
 
         update_plot()
 
-    # 4. Connect the click event to our handler function
+    def on_key(event):
+        """Handles key press events on the canvas."""
+        if event.inaxes != ax:
+            return
+
+        if event.key == "h":
+            mouse_x, mouse_y = event.xdata, event.ydata
+
+            # find the closest node to the mouse
+            closest_node = None
+            min_dist = float('inf')
+
+            for node, n_pos in pos.items():
+                dist = math.hypot(mouse_x - n_pos[0], mouse_y - n_pos[1])
+                if min_dist > dist:
+                    min_dist = dist
+                    closest_node = node
+
+            if state['highlight_node'] == closest_node:
+                state['highlight_node'] = None
+
+            else:
+                state['highlight_node'] = closest_node
+
+            update_plot()
+
+        elif event.key == "c":
+            state['lens_center'] = None
+            state['highlight_node'] = None
+            update_plot()
+
+
+    # 4. Connect the click/key events to our handler function
     fig.canvas.mpl_connect('button_press_event', on_click)
+    fig.canvas.mpl_connect('key_press_event', on_key)
 
     # 5. Trigger the first draw and show the plot
     update_plot()
