@@ -15,4 +15,4 @@ with open("airlines.nodes", "r") as f:
         G.add_node(n, pos=(float(x), float(y)))
 
 # bundling strength ~0.7 or higher recommended
-draw_bundle(G, 2, 2, highlight_node=None, draw_orig=False, bundle_strength=0.7)
+draw_bundle(G, 2, 2, highlight_node=None, draw_orig=False, bundle_strength=0.7, highlight_radius=2.5)
