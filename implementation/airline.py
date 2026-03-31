@@ -1,13 +1,13 @@
 import networkx as nx
 
-from drawv2 import draw_bundle
+from source.drawv2 import draw_bundle
 
 
 #-------- LOAD GRAPH--------
-G = nx.read_edgelist("airlines.edges")
+G = nx.read_edgelist("../datasets/airlines.edges")
 
 
-with open("airlines.nodes", "r") as f:
+with open("../datasets/airlines.nodes", "r") as f:
     for line in f:
         if not line.strip():
             continue
