@@ -6,8 +6,9 @@ matplotlib.use('TkAgg') # done so that the window stays open allowing the user t
 import matplotlib.pyplot as plt
 import math
 from matplotlib.patches import Circle
+from matplotlib.widgets import Slider
 
-from edge_bundling import edge_path_bundling
+from source.edge_bundling import edge_path_bundling
 from scipy.interpolate import make_interp_spline
 import numpy as np
 
@@ -141,14 +142,36 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
     # 3. Set up the Matplotlib figure and state
     fig, ax = plt.subplots(figsize=(12, 8))
 
+    # Create UI menu
+    plt.subplots_adjust(bottom=0.3)
+
+    # define positions for sliders
+    ax_snap = fig.add_axes([0.2, 0.22, 0.6, 0.03])
+    ax_bundle = fig.add_axes([0.2, 0.17, 0.6, 0.03])
+    ax_lens_rad = fig.add_axes([0.2, 0.12, 0.6, 0.03])
+    ax_high_rad = fig.add_axes([0.2, 0.07, 0.6, 0.03])
+
+    # create the sliders, passing the initial function values as defaults
+    slider_snap = Slider(ax_snap, 'Snap Strength', 0.0, 1.0, valinit=snap_strength)
+    slider_bundle = Slider(ax_bundle, 'Bundle Strength', 0.0, 1.0, valinit=bundle_strength)
+    slider_lens_rad = Slider(ax_lens_rad, 'Lens Radius', 5.0, 100.0, valinit=lens_radius)
+    slider_high_rad = Slider(ax_high_rad, 'Highlight Radius', 1.0, 50.0, valinit=highlight_radius)
+
     # We use a dictionary to store state so it can be modified by the nested functions
     state = {'lens_center': initial_lens_center,
-             'highlight_node': highlight_node
+             'highlight_node': highlight_node,
+             'sliders': [slider_snap, slider_bundle, slider_lens_rad, slider_high_rad]
              }
 
-    def update_plot():
+    def update_plot(val=None):
         """Clears and redraws the graph with the current lens position."""
         ax.clear()
+
+        # grab current slider vals from UI
+        cur_snap = slider_snap.val
+        cur_bundle = slider_bundle.val
+        cur_lens_rad = slider_lens_rad.val
+        cur_high_rad = slider_high_rad.val
 
         # Draw original graph
         if draw_orig:
@@ -160,7 +183,7 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
         # Draw the lens circle
         center = state['lens_center']
         if center is not None:
-            lens = Circle((center[0], center[1]), lens_radius, fill=False, edgecolor="black", linewidth=2, zorder=5)
+            lens = Circle((center[0], center[1]), cur_lens_rad, fill=False, edgecolor="black", linewidth=2, zorder=5)
             ax.add_patch(lens)
 
         # Draw bundled graph
@@ -173,18 +196,18 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
             straight_xs = (1 - t_vals) * bundled_xs[0] + t_vals * bundled_xs[-1]
             straight_ys = (1 - t_vals) * bundled_ys[0] + t_vals * bundled_ys[-1]
 
-            xs = (1 - bundle_strength) * straight_xs + bundle_strength * bundled_xs
-            ys = (1 - bundle_strength) * straight_ys + bundle_strength * bundled_ys
+            xs = (1 - cur_bundle) * straight_xs + cur_bundle * bundled_xs
+            ys = (1 - cur_bundle) * straight_ys + cur_bundle * bundled_ys
 
             highlight = False
             if state['highlight_node'] is not None:
-                highlight = bundle_near_node(path, pos, state['highlight_node'], highlight_radius)
+                highlight = bundle_near_node(path, pos, state['highlight_node'], cur_high_rad)
 
             colour = "blue" if highlight else "black"
 
             # Apply the relaxed lens distortion
             if center is not None:
-                xs, ys = relax_path_in_lens(xs, ys, center, lens_radius, strength=snap_strength)
+                xs, ys = relax_path_in_lens(xs, ys, center, cur_lens_rad, strength=cur_snap)
 
             # Plot splines or straight lines
             if len(xs) > 3:
@@ -210,7 +233,30 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
 
         ax.set_title("Interactive Bundled Graph (Click to move lens)")
         ax.axis("equal")
+
+        guide_text = (
+            "Controls:\n"
+            "Left click: Move lens, "
+            "Right click: Remove lens\n"
+            "H: Highlight nearest node (clicking H again on the highlighted node will remove)\n"
+            "C: Clear lens and highlight selections"
+        )
+
+        ax.text(
+            0.01, 0.99, guide_text,
+            transform=ax.transAxes,  # makes coords relative (0–1)
+            fontsize=9,
+            verticalalignment='top',
+            horizontalalignment='left'
+        )
+
         fig.canvas.draw_idle()  # Efficiently redraw the canvas
+
+    # register slider changes to update plot function
+    slider_snap.on_changed(update_plot)
+    slider_bundle.on_changed(update_plot)
+    slider_lens_rad.on_changed(update_plot)
+    slider_high_rad.on_changed(update_plot)
 
     def on_click(event):
         """Handles mouse click events on the canvas."""
@@ -262,6 +308,7 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
     # 4. Connect the click/key events to our handler function
     fig.canvas.mpl_connect('button_press_event', on_click)
     fig.canvas.mpl_connect('key_press_event', on_key)
+
 
     # 5. Trigger the first draw and show the plot
     update_plot()
