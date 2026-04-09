@@ -8,7 +8,7 @@ import math
 from matplotlib.patches import Circle
 from matplotlib.widgets import Slider
 
-from source.edge_bundling import edge_path_bundling
+from processing.edge_bundling import edge_path_bundling
 from scipy.interpolate import make_interp_spline
 import numpy as np
 
