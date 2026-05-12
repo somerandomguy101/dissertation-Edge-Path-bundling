@@ -16,4 +16,4 @@ with open("../datasets/migrations.nodes", "r") as f:
 
 
 #draw_bundle(G, 2, 2, draw_orig=False, highlight_node="235", highlight_radius=5)
-draw_bundle(G, 2, 2, draw_orig=False, bundle_strength=0.9, highlight_radius=2.5)
+draw_bundle(G, 2, 2, highlight_node=None, draw_orig=False, bundle_strength=0.75, highlight_radius=5, snap_strength=0.75)

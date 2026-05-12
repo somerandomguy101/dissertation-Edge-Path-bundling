@@ -154,7 +154,7 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
     # create the sliders, passing the initial function values as defaults
     slider_snap = Slider(ax_snap, 'Snap Strength', 0.0, 1.0, valinit=snap_strength)
     slider_bundle = Slider(ax_bundle, 'Bundle Strength', 0.0, 1.0, valinit=bundle_strength)
-    slider_lens_rad = Slider(ax_lens_rad, 'Lens Radius', 5.0, 100.0, valinit=lens_radius)
+    slider_lens_rad = Slider(ax_lens_rad, 'Lens Radius', 0.0, 25.0, valinit=lens_radius)
     slider_high_rad = Slider(ax_high_rad, 'Highlight Radius', 1.0, 50.0, valinit=highlight_radius)
 
     # We use a dictionary to store state so it can be modified by the nested functions
@@ -183,7 +183,7 @@ def draw_bundle(G, k=2, d=2, draw_orig=True, highlight_node=None, highlight_radi
         # Draw the lens circle
         center = state['lens_center']
         if center is not None:
-            lens = Circle((center[0], center[1]), cur_lens_rad, fill=False, edgecolor="black", linewidth=2, zorder=5)
+            lens = Circle((center[0], center[1]), cur_lens_rad, fill=False, edgecolor="lightgrey", linewidth=2, zorder=5)
             ax.add_patch(lens)
 
         # Draw bundled graph
